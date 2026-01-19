@@ -22,7 +22,7 @@ namespace ParseXmlDefinitions
             xmlDoc.Load(fs);
         }
 
-        public void Parse()
+        public List<DefElement> Parse()
         {
 
             //get the first node
@@ -52,28 +52,34 @@ namespace ParseXmlDefinitions
 
             Console.WriteLine(root.Name);
 
-            TryReadDefs(root);
+            List<DefElement>  defs = TryReadDefs(root);
 
             //TryWriteChildren(root);
 
             //then output it
             //Console.WriteLine(root.OuterXml);
+
+            return defs;
         }
 
-        private void TryReadDefs(XmlNode defsNode)
+        private List<DefElement> TryReadDefs(XmlNode defsNode)
         {
             if(defsNode.ChildNodes.Count == 0)
             {
                 throw new Exception("Defs node contained no defs.");
             }
 
+            List<DefElement> defs = new();
+
             foreach (XmlNode defNode in defsNode.ChildNodes)
             {
-                TryReadDef(defNode);
+                defs.Add(TryReadDef(defNode));
             }
+
+            return defs;
         }
 
-        private void TryReadDef(XmlNode defNode)
+        private DefElement TryReadDef(XmlNode defNode)
         {
             Console.WriteLine($"Read {defNode.Name}...");
 
@@ -94,7 +100,12 @@ namespace ParseXmlDefinitions
 
             defEle.Properties = new();
 
+            List<BaseElement> refProperties = new List<BaseElement>();
+            AddDefProperties(defNode, ref refProperties);
 
+            defEle.Properties = refProperties;
+
+            return defEle;
         }
 
         private void AddDefProperties(XmlNode defNode, ref List<BaseElement> properties)
@@ -113,7 +124,7 @@ namespace ParseXmlDefinitions
                     continue;
                 }
 
-                BaseElement childProperty;
+                BaseElement childProperty = null;
 
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
                 XmlNode firstChild = propertyNode.FirstChild;
@@ -121,37 +132,11 @@ namespace ParseXmlDefinitions
 
                 if (firstChild.NodeType == XmlNodeType.Text)
                 {
-                    switch(GetNodeTextType(propertyNode, out object nodeCastValue))
-                    {
-                        case TextNodeSubTypeEnum.Bool:
-                            childProperty = new BoolElement(propertyNode.Name.Trim(), (bool)nodeCastValue);
-                            break;
-                        case TextNodeSubTypeEnum.Number:
-                            childProperty = new NumberElement(propertyNode.Name.Trim(), (decimal)nodeCastValue);
-                            break;
-                        case TextNodeSubTypeEnum.String:
-                            childProperty = new StringElement(propertyNode.Name.Trim(), (string)nodeCastValue);
-                            break;
-                    }
+                    childProperty = ParseTextElement(propertyNode);
                 }
                 else if (firstChild.NodeType == XmlNodeType.Element)
                 {
-                    if(firstChild.Name == "li")
-                    {
-                        // list
-
-                        foreach(XmlNode listItemNode in firstChild.ChildNodes)
-                        {
-                            if(listItemNode.InnerText != null)
-                            {
-                                listItemNode.
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // complex
-                    }
+                    childProperty = ParseElement(propertyNode);
                 }
                 else
                 {
@@ -164,6 +149,125 @@ namespace ParseXmlDefinitions
                 properties.Add(childProperty);
             }
         }
+
+  
+
+        private BaseElement ParseElement(XmlNode propertyNode)
+        {
+            XmlNode? firstChild = propertyNode.FirstChild;
+
+            if (firstChild == null) throw new Exception("firstChild was null");
+
+            if (firstChild.Name == "li")
+            {
+                // List
+                return ParseListElement(propertyNode);
+            }
+            else
+            {
+                // Complex
+                return ParseComplexElement(propertyNode);
+            }
+        }
+
+        private BaseElement ParseComplexElement(XmlNode propertyNode)
+        {
+            XmlNode? firstChild = propertyNode.FirstChild;
+            if (firstChild == null) throw new Exception("firstChild was null");
+
+            List<BaseElement> refProperties = new List<BaseElement>();
+            AddDefProperties(propertyNode, ref refProperties);
+
+            ComplexElement complexElement = new ComplexElement(propertyNode.Name.Trim());
+            complexElement.Properties = refProperties;
+
+            return complexElement;
+        }
+
+        private BaseElement ParseListElement(XmlNode propertyNode)
+        {
+            XmlNode? firstChild = propertyNode.FirstChild;
+            if (firstChild == null) throw new Exception("firstChild was null");
+
+            // list
+            XmlNode? firstNode = firstChild.ChildNodes.Item(0);
+
+            if (firstChild.FirstChild.NodeType == XmlNodeType.Text)
+            {
+
+            }
+            else
+            {
+                string s = "";
+            }
+
+
+            if (firstNode == null) throw new Exception("List was empty");
+            Type listType;
+
+            BaseElement? listElement = null;
+
+            switch (GetNodeTextType(firstNode, out object nodeCastValue))
+            {
+                case TextNodeSubTypeEnum.Bool:
+
+                    throw new Exception("List of bools makes no sense");
+
+                case TextNodeSubTypeEnum.Number:
+
+
+                    ListElement<decimal> numberListElement = new ListElement<decimal>(propertyNode.Name.Trim());
+                    AddListItems(firstChild, ref numberListElement);
+                    listElement = numberListElement;
+                    break;
+
+                case TextNodeSubTypeEnum.String:
+
+                    ListElement<string> stringListElement = new ListElement<string>(propertyNode.Name.Trim());
+                    AddListItems(firstChild, ref stringListElement);
+                    listElement = stringListElement;
+                    break;
+
+                default: throw new Exception("Could not compute type of first list item.");
+            }
+
+            if (listElement == null)
+            {
+                throw new Exception("listELement was null.");
+            }
+
+            return listElement;
+        }
+        private void AddListItems<T>(XmlNode firstChild, ref ListElement<T> listElementRef)
+        {
+            foreach (XmlNode listItemNode in firstChild.ChildNodes)
+            {
+                if (listItemNode.InnerText != null)
+                {
+                    listElementRef.Items!.Add((T)Convert.ChangeType(listItemNode.InnerText, typeof(T)));
+                }
+            }
+        }
+
+        private BaseElement ParseTextElement(XmlNode propertyNode)
+        {
+            XmlNode firstChild = propertyNode.FirstChild;
+
+            switch (GetNodeTextType(firstChild, out object nodeCastValue))
+            {
+                case TextNodeSubTypeEnum.Bool:
+                    return new BoolElement(propertyNode.Name.Trim(), (bool)nodeCastValue);
+                    break;
+                case TextNodeSubTypeEnum.Number:
+                    return new NumberElement(propertyNode.Name.Trim(), (decimal)nodeCastValue);
+
+                case TextNodeSubTypeEnum.String:
+                    return new StringElement(propertyNode.Name.Trim(), (string)nodeCastValue);
+            }
+
+            throw new Exception("Failed to parse text element.");
+        }
+
 
         private TextNodeSubTypeEnum GetNodeTextType(XmlNode xmlNode, out object outCastValue)
         {

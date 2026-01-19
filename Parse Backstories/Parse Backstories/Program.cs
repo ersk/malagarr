@@ -12,10 +12,12 @@ namespace Parse_Backstories
             {
 
 
-                string rimWorldPath = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RimWorld";
+                string rimWorldPath = "C:\\src\\github\\rimworld-defs";
 
                 Parser parser = new(rimWorldPath);
                 Defs defs = parser.Run();
+
+
 
                 Writer writer = new(defs);
                 writer.Run();
@@ -90,10 +92,19 @@ namespace Parse_Backstories
             Defs? def;
             using (StreamReader sr = new StreamReader(filePath))
             {
-                XmlReader reader = XmlReader.Create(sr);
+                XmlReaderSettings settings = new XmlReaderSettings()
+                {
+                    IgnoreComments = true,
+                    IgnoreProcessingInstructions = true,
+                    IgnoreWhitespace = true,
+                };
+                XmlReader reader = XmlReader.Create(sr, settings);
 
                 XmlSerializer xmlSerializer = new XmlSerializer(typeof(Defs));
-                def = (Defs?)xmlSerializer.Deserialize(reader, null);
+
+                //jsonString = JsonSerializer.Serialize(weatherForecast, serializeOptions);
+
+                def = (Defs?)xmlSerializer.Deserialize(reader);
             }
 
             if(def == null)

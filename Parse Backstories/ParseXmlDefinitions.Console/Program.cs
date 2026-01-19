@@ -1,5 +1,6 @@
-﻿using System.Xml.Serialization;
+﻿using ParseXmlDefinitions.Model;
 using System.Xml;
+using System.Xml.Serialization;
 
 namespace ParseXmlDefinitions.ConsoleRunner
 {
@@ -13,7 +14,7 @@ namespace ParseXmlDefinitions.ConsoleRunner
             {
                 Console.WriteLine("Test");
 
-                string rimWorldPath = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RimWorld";
+                string rimWorldPath = "C:\\src\\github\\rimworld-defs";
 
                 Parser parser = new(rimWorldPath);
                 parser.Run();
@@ -41,11 +42,21 @@ namespace ParseXmlDefinitions.ConsoleRunner
 
             public void Run()
             {
+                ///C:\src\github\rimworld-defs\BackstoryDefs\Solid\Solid_Adult.xml
+                //CC:\src\github\rimworld-defs\Data\Core\Defs\BackstoryDefs\Solid
                 string solidAdultRelativeFilePath = "BackstoryDefs\\Solid\\Solid_Adult.xml";
                 string solidAdultPath = Path.Combine(defsPath, solidAdultRelativeFilePath);
 
                 XmlDefFileReader reader = new(solidAdultPath);
-                reader.Parse();
+                List<DefElement> defs = reader.Parse();
+
+                DefTypeLibrary library = new();
+                library.ParseDefs(defs);
+
+                var lib = library.library;
+
+                string s = "";
+
             }
 
 

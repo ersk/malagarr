@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using static Parse_Backstories.BackstoryDefOLD;
@@ -226,6 +229,11 @@ namespace Parse_Backstories
         [XmlElement(ElementName = "possessions")]
         public Possessions Possessions { get; set; }
 
+        public static string GetCsvHeader()
+        {
+            return "Def Name, Slot, Title, Male Count, Female Count, Thin Count, Hulk Count, Fat Count, Base Desc, " +
+                "Firefighting Disabled, Violent Disabled, Shooting, Melee";
+        }
         public string ToCsvString()
         {
             StringBuilder sb = new StringBuilder();
@@ -508,6 +516,8 @@ namespace Parse_Backstories
         }
     }
 
+
+
     [XmlRoot(ElementName = "forcedTraits")]
     public class ForcedTraits
     {
@@ -522,7 +532,20 @@ namespace Parse_Backstories
         public int Transhumanist { get; set; }
 
         [XmlElement(ElementName = "Kind")]
-        public int? Kind { get; set; }
+        public string? z_kind { get; set; }
+
+        [XmlIgnore]
+        public int Kind
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(z_kind))
+                {
+                    return 0;
+                }
+                return int.Parse(z_kind);
+            }
+        }
 
         [XmlElement(ElementName = "Abrasive")]
         public int Abrasive { get; set; }
@@ -599,6 +622,7 @@ namespace Parse_Backstories
     {
         public static string ToCsvValue(this string s)
         {
+            if(string.IsNullOrWhiteSpace(s)) return "";
             if (s.Contains("\"") || s.Contains("\n"))
             {
                 return "\"" + s.Replace("\"", "\"\"") + "\"";

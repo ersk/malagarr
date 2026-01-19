@@ -71,44 +71,50 @@ namespace ParseXmlDefinitions.Model
         }
     }
 
-    public class StringListElement : BaseElement
+    public class ListElement<T> : BaseElement
     {
-        public List<StringElement>? Items { get; set; }
+        public HashSet<T>? Items { get; set; }
 
-        public StringListElement(string name)
+        public ListElement(string name)
             : base(name)
         {
-
+            Items = new();
         }
     }
-    public class NumberListElement : BaseElement
-    {
-        public List<NumberElement>? Items { get; set; }
+    //public class StringListElement : ListElement<string>
+    //{
+    //    public StringListElement(string name)
+    //    : base(name)
+    //    {
+ 
+    //    }
+    //}
+    //public class NumberListElement : ListElement<decimal>
+    //{
+    //    public NumberListElement(string name)
+    //    : base(name)
+    //    {
 
-        public NumberListElement(string name)
-            : base(name)
-        {
+    //    }
+    //}
+    //public class BoolListElement : BaseElement
+    //{
+    //    public List<BoolElement>? Items { get; set; }
 
-        }
-    }
-    public class BoolListElement : BaseElement
-    {
-        public List<BoolElement>? Items { get; set; }
+    //    public BoolListElement(string name)
+    //        : base(name)
+    //    {
 
-        public BoolListElement(string name)
-            : base(name)
-        {
-
-        }
-    }
+    //    }
+    //}
     public class ComplexListElement : BaseElement
     {
-        public List<ComplexElement>? Items { get; set; }
+        public List<BaseElement>? Items { get; set; }
 
         public ComplexListElement(string name)
             : base(name)
         {
-
+            Items = new();
         }
     }
 
