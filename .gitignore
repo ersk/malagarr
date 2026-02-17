@@ -7,3 +7,10 @@ Parse Backstories/ParseXmlDefinitions.Console/obj/**/*
 Parse Backstories/ParseXmlDefinitions/bin/**/*
 Parse Backstories/ParseXmlDefinitions/obj/**/*
 /.vs
+/Parse Backstories/Ersk43.Malagarr.Web/Ersk43.Malagarr.Web/bin
+/Parse Backstories/Ersk43.Malagarr.Web/Ersk43.Malagarr.Web/obj
+/Parse Backstories/Ersk43.Malagarr.Web/Ersk43.Malagarr.Web/wwwroot/lib/bootstrap/dist
+/Parse Backstories/Ersk43.Malagarr.Web/Ersk43.Malagarr.Web.Client/bin
+/Parse Backstories/Ersk43.Malagarr.Web/Ersk43.Malagarr.Web.Client/obj
+/Parse Backstories/Parse Backstories.slnLaunch.user
+*.user
