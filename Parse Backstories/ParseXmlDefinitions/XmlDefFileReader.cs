@@ -8,18 +8,37 @@ namespace ParseXmlDefinitions
     public class XmlDefFileReader : IDisposable
     {
         string filePath;
-        FileStream fs;
+        FileStream? fs = null;
+        TextReader? tr = null;
         XmlDocument xmlDoc;
 
-        public XmlDefFileReader(string filePath)
+        public enum XmlDefFileReaderInputTypeEnum
+        {
+            FilePath,
+            FileText
+        }
+
+        public XmlDefFileReader(
+            string filePathOrText,
+            XmlDefFileReaderInputTypeEnum inputType = XmlDefFileReaderInputTypeEnum.FilePath)
         {
 
-            this.filePath = filePath;
+            if (inputType == XmlDefFileReaderInputTypeEnum.FilePath)
+            {
+                this.filePath = filePathOrText;
 
-            fs = File.OpenRead(filePath);
+                fs = File.OpenRead(filePathOrText);
 
-            xmlDoc = new XmlDocument();
-            xmlDoc.Load(fs);
+                xmlDoc = new XmlDocument();
+                xmlDoc.Load(fs);
+            }
+            else
+            {
+                TextReader tr = new StringReader(filePathOrText);
+
+                xmlDoc = new XmlDocument();
+                xmlDoc.Load(tr);
+            }
         }
 
         public List<DefElement> Parse()
@@ -85,18 +104,21 @@ namespace ParseXmlDefinitions
 
             //look for defName property
 
-            XmlNode? defNameNode = defNode.SelectSingleNode("defName");
+            //XmlNode? defNameNode = defNode.SelectSingleNode("defName");
 
-            if(defNameNode == null)
-            {
-                throw new Exception("Def node does not have a defName child node.");
-            }
+            //if(defNameNode == null)
+            //{
+            //    throw new Exception("Def node does not have a defName child node.");
+            //}
 
-            if (string.IsNullOrWhiteSpace(defNameNode.Name))
-            {
-                throw new Exception("Def name node name was null or whitespace.");
-            }
-            DefElement defEle = new(defNode.Name, defNameNode.Name);
+            //if (string.IsNullOrWhiteSpace(defNameNode.Name))
+            //{
+            //    throw new Exception("Def name node name was null or whitespace.");
+            //}
+
+            string defName = TryReadDefName(defNode);
+
+            DefElement defEle = new(defNode.Name, defName);
 
             defEle.Properties = new();
 
@@ -106,6 +128,44 @@ namespace ParseXmlDefinitions
             defEle.Properties = refProperties;
 
             return defEle;
+        }
+
+        private string TryReadDefName(XmlNode defNode)
+        {
+            string defName = null;
+
+            //look for defName property
+            XmlNode? defNameNode = defNode.SelectSingleNode("defName");
+
+            if (defNameNode == null)
+            {
+                // no defName node - so try look for attribute 'Name'
+
+                if (defNode.Attributes == null)
+                {
+                    throw new Exception("Failed to get def name. Neither a defName node or a name attribute was found.");
+                }
+
+                XmlAttributeCollection attributes = defNode.Attributes;
+                XmlNode? xmlNameAttributeNode = attributes.GetNamedItem("Name");
+                if (xmlNameAttributeNode == null)
+                {
+                    throw new Exception("Failed to get def name. Neither a defName node or a name attribute was found.");
+                }
+
+                defName = xmlNameAttributeNode.Name;
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(defNameNode.Name))
+                {
+                    throw new Exception("Def name node name was null or whitespace.");
+                }
+
+                defName = defNameNode.Name;
+            }
+
+            return defName;
         }
 
         private void AddDefProperties(XmlNode defNode, ref List<BaseElement> properties)
@@ -170,7 +230,7 @@ namespace ParseXmlDefinitions
             }
         }
 
-        private BaseElement ParseComplexElement(XmlNode propertyNode)
+        private ComplexElement ParseComplexElement(XmlNode propertyNode)
         {
             XmlNode? firstChild = propertyNode.FirstChild;
             if (firstChild == null) throw new Exception("firstChild was null");
@@ -192,14 +252,6 @@ namespace ParseXmlDefinitions
             // list
             XmlNode? firstNode = firstChild.ChildNodes.Item(0);
 
-            if (firstChild.FirstChild.NodeType == XmlNodeType.Text)
-            {
-
-            }
-            else
-            {
-                string s = "";
-            }
 
 
             if (firstNode == null) throw new Exception("List was empty");
@@ -207,33 +259,58 @@ namespace ParseXmlDefinitions
 
             BaseElement? listElement = null;
 
-            switch (GetNodeTextType(firstNode, out object nodeCastValue))
+
+
+
+
+
+
+
+            if (firstChild.FirstChild!.NodeType == XmlNodeType.Text)
             {
-                case TextNodeSubTypeEnum.Bool:
+                switch (GetNodeTextType(firstNode, out object nodeCastValue))
+                {
+                    case TextNodeSubTypeEnum.Bool:
 
-                    throw new Exception("List of bools makes no sense");
+                        throw new Exception("List of bools makes no sense");
 
-                case TextNodeSubTypeEnum.Number:
+                    case TextNodeSubTypeEnum.Number:
 
+                        ListElement<decimal> numberListElement = new ListElement<decimal>(propertyNode.Name.Trim());
+                        AddListItems(firstChild, ref numberListElement);
+                        listElement = numberListElement;
+                        break;
 
-                    ListElement<decimal> numberListElement = new ListElement<decimal>(propertyNode.Name.Trim());
-                    AddListItems(firstChild, ref numberListElement);
-                    listElement = numberListElement;
-                    break;
+                    case TextNodeSubTypeEnum.String:
 
-                case TextNodeSubTypeEnum.String:
+                        ListElement<string> stringListElement = new ListElement<string>(propertyNode.Name.Trim());
+                        AddListItems(firstChild, ref stringListElement);
+                        listElement = stringListElement;
+                        break;
 
-                    ListElement<string> stringListElement = new ListElement<string>(propertyNode.Name.Trim());
-                    AddListItems(firstChild, ref stringListElement);
-                    listElement = stringListElement;
-                    break;
-
-                default: throw new Exception("Could not compute type of first list item.");
+                    default: throw new Exception("Could not compute type of first list item.");
+                }
             }
-
-            if (listElement == null)
+            else if (firstChild.NodeType == XmlNodeType.Element)
             {
-                throw new Exception("listELement was null.");
+
+
+
+                //childProperty = ParseElement(propertyNode);
+            
+                ListElement<ComplexElement> complexListElement = new ListElement<ComplexElement>(propertyNode.Name.Trim());
+
+                foreach (XmlNode childNode in propertyNode.ChildNodes)
+                {
+                    ComplexElement complexElement = ParseComplexElement(childNode);
+                    complexListElement.Items.Add(complexElement);
+                }
+
+                listElement = complexListElement;
+            }
+            else
+            {
+                throw new Exception("Unexpected format when trying to get list item.");
             }
 
             return listElement;
@@ -310,7 +387,17 @@ namespace ParseXmlDefinitions
 
         public void Dispose()
         {
-            fs.Dispose();
+            if (fs != null)
+            {
+                fs.Close();
+                fs.Dispose();
+            }
+
+            if (tr != null)
+            {
+                tr.Close();
+                tr.Dispose();
+            }
         }
     }
 

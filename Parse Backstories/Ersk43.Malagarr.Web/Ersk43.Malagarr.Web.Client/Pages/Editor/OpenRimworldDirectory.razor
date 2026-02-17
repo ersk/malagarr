@@ -1,0 +1,79 @@
+﻿@using ParseXmlDefinitions
+@using ParseXmlDefinitions.Model
+@using Ersk43.Malagarr.Web.Client.Events.EventArgs
+
+@rendermode @(new InteractiveAutoRenderMode(prerender: false))
+
+@inject Ersk43.Malagarr.Web.Client.Services.IFileExplorerService fileExplorerService
+
+<div class="openRimworldDirectory">
+    <p>Open RimWorld folder:</p>
+    <button class="btn btn-primary" @onclick="OnOpenDefFolderClicked"> Open RimWorld Folder</button>
+</div>
+
+
+@code {
+
+    [Parameter]
+    public EventCallback<OpenedDirectoryEventArgs> OnOpenedDirectoryCallback { get; set; }
+
+    private int currentCount = 0;
+
+    //private IJSObjectReference? module;
+    private IJSObjectReference? dirHandle;
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+
+        }
+    }
+
+
+    private async Task OnOpenDefFolderClicked()
+    {
+        dirHandle = await fileExplorerService.RequestUserToOpenADirectory();
+
+        OpenedDirectoryEventArgs eventArgs = new(dirHandle);
+        OnOpenedDirectoryCallback.InvokeAsync(eventArgs);
+
+        // List<string> dirEntries = await fileExplorerService.GetDirectoryContents(dirHandle);
+
+        // IJSObjectReference childHandle = await fileExplorerService.GetChildDirectoryHandle(dirHandle, dirEntries[0]);
+
+        // List<string> childEntries = await fileExplorerService.GetDirectoryContents(childHandle);
+
+        // IJSObjectReference fileHandle = await fileExplorerService.GetChildFileHandle(childHandle, childEntries[0]);
+
+        // string fileText = await fileExplorerService.GetFileText(fileHandle);
+
+
+        // ReadFile(fileText);
+
+
+    }
+
+
+
+    public void ReadFile(string fileText)
+    {
+        XmlDefFileReader reader = new(fileText, XmlDefFileReader.XmlDefFileReaderInputTypeEnum.FileText);
+        List<DefElement> defs = reader.Parse();
+
+        DefTypeLibrary library = new();
+        library.ParseDefs(defs);
+
+        var lib = library.library;
+
+        string s = "";
+    }
+}
+
+
+
+
+
+
+
+

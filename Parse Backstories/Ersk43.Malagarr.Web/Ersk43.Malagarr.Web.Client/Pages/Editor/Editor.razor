@@ -1,0 +1,16 @@
+﻿@page "/"
+@using Ersk43.Malagarr.Web.Client.Events.EventArgs
+
+<PageTitle>Def Editor</PageTitle>
+
+<OpenRimworldDirectory OnOpenedDirectoryCallback="OnOpenedDirectoryCallback"></OpenRimworldDirectory>
+
+
+
+@code {
+
+    public void OnOpenedDirectoryCallback(OpenedDirectoryEventArgs eventArgs)
+    {
+        string s = "";
+    }
+}

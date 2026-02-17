@@ -1,0 +1,133 @@
+﻿@page "/counter"
+@using Microsoft.Win32.SafeHandles
+@using ParseXmlDefinitions
+@using ParseXmlDefinitions.Model
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<PageTitle>Counter</PageTitle>
+
+<h1>Counter</h1>
+
+<p role="status">Current count: @currentCount</p>
+
+<button class="btn btn-primary" @onclick="OnOpenDefFolderClicked">Open Def Folder</button>
+
+@code {
+    private int currentCount = 0;
+
+    private IJSObjectReference? module;
+    private IJSObjectReference? dirHandle;
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                module = await JS.InvokeAsync<IJSObjectReference>(
+                    "import",
+                    "./Pages/Counter.razor.js");
+
+                // import { newFunctionName, anotherNewFunctionName } from
+            }
+            catch (Exception ex)
+            {
+                string s = "";
+            }
+        }
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        if (module is not null)
+        {
+            try
+            {
+                await module.DisposeAsync();
+            }
+            catch (Exception ex)
+            {
+                string s = "";
+            }
+        }
+    }
+
+    private async Task OnOpenDefFolderClicked()
+    {
+        dirHandle = await module.InvokeAsync<IJSObjectReference>("openDirectoryAsync");
+
+        List<string> dirEntries =
+            await module.InvokeAsync<List<string>>("getContents", dirHandle);
+
+        IJSObjectReference childHandle =
+            await module.InvokeAsync<IJSObjectReference>("getDirectoryHandle", dirHandle, dirEntries[0]);
+
+        List<string> childEntries =
+            await module.InvokeAsync<List<string>>("getContents", childHandle);
+
+        IJSObjectReference fileHandle =
+            await module.InvokeAsync<IJSObjectReference>("getFileHandle", childHandle, childEntries[0]);
+
+
+        string fileText =
+            await module.InvokeAsync<string>("getFileText", fileHandle);
+
+
+        ReadFile(fileText);
+
+        string s = "";
+    }
+
+    // public class CustomSteam : Stream
+    // {
+    //     public override bool CanRead => throw new NotImplementedException();
+
+    //     public override bool CanSeek => throw new NotImplementedException();
+
+    //     public override bool CanWrite => throw new NotImplementedException();
+
+    //     public override long Length => throw new NotImplementedException();
+
+    //     public override long Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+    //     public override void Flush()
+    //     {
+    //         // readableStream.cancel();
+    //         throw new NotImplementedException();
+    //     }
+
+    //     public override int Read(byte[] buffer, int offset, int count)
+    //     {
+    //         throw new NotImplementedException();
+    //     }
+
+    //     public override long Seek(long offset, SeekOrigin origin)
+    //     {
+    //         throw new NotImplementedException();
+    //     }
+
+    //     public override void SetLength(long value)
+    //     {
+    //         throw new NotImplementedException();
+    //     }
+
+    //     public override void Write(byte[] buffer, int offset, int count)
+    //     {
+    //         throw new NotImplementedException();
+    //     }
+    // }
+
+    public void ReadFile(string fileText)
+    {
+        XmlDefFileReader reader = new(fileText, XmlDefFileReader.XmlDefFileReaderInputTypeEnum.FileText);
+        List<DefElement> defs = reader.Parse();
+
+        DefTypeLibrary library = new();
+        library.ParseDefs(defs);
+
+        var lib = library.library;
+
+        string s = "";
+    }
+}
