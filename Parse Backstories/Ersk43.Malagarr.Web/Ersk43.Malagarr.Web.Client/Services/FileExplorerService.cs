@@ -1,4 +1,5 @@
 ﻿using Microsoft.JSInterop;
+using static Ersk43.Malagarr.Web.Client.Services.IFileExplorerService;
 
 namespace Ersk43.Malagarr.Web.Client.Services
 {
@@ -64,11 +65,12 @@ namespace Ersk43.Malagarr.Web.Client.Services
             return await module!.InvokeAsync<IJSObjectReference>("getFileHandle", parentDirectoryHandle, childFileName);
         }
 
-        public async Task<List<string>> GetDirectoryContents(IJSObjectReference directoryHandle)
+
+        public async Task<List<DirectoryContentsChild>> GetDirectoryContents(IJSObjectReference directoryHandle)
         {
             await LoadJSModuleIfNeeded();
 
-            return await module!.InvokeAsync<List<string>>("getContents", directoryHandle);
+            return await module!.InvokeAsync<List<DirectoryContentsChild>>("getContents", directoryHandle);
         }
 
         public async Task<string> GetFileText(IJSObjectReference fileHandle)
@@ -84,6 +86,35 @@ namespace Ersk43.Malagarr.Web.Client.Services
             {
                 await module.DisposeAsync();
             }
+        }
+
+        public async Task<IJSObjectReference> GetDescendantDirectory(
+            IJSObjectReference jsDirectoryHandle,
+            params string[] descendantFolderName)
+        {
+            // Argument checking
+            if (descendantFolderName.Any() == false)
+            {
+                throw new ArgumentException("No descendant folder names provided.");
+            }
+
+            int i = 0;
+            IJSObjectReference jsSubDirectoryHandle = jsDirectoryHandle;
+            try
+            {
+                for (i = 0; i < descendantFolderName.Length; i++)
+                {
+                    jsSubDirectoryHandle =
+                        await GetChildDirectoryHandle(jsSubDirectoryHandle, descendantFolderName[i]);
+                }
+            }
+            catch (Exception ex)
+            {
+                string folderPath = string.Join("/", descendantFolderName);
+                throw new Exception($"Failed to find descendant directory '{descendantFolderName[i]}' in the path '{folderPath}'.");
+            }
+
+            return jsSubDirectoryHandle;
         }
     }
 }

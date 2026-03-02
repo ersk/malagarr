@@ -1,6 +1,6 @@
 ﻿using Microsoft.JSInterop;
 
-namespace Ersk43.Malagarr.Web.Client.Events.EventArgs
+namespace Ersk43.Malagarr.Web.Client.Events.Args
 {
     public class OpenedDirectoryEventArgs
     {

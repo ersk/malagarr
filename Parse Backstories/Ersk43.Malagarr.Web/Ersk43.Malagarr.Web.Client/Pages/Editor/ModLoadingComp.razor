@@ -1,0 +1,39 @@
+@using Ersk43.Malagarr.Web.Client.Controllers.Editor.Mods
+
+<div class="modLoading">
+
+    <div>
+        <span>@ModLoading.Id</span>
+        <span>@ModLoading.FileCount</span>
+        <span>(@ModLoading.State.ToString())</span>
+    </div>
+
+
+</div>
+
+
+@code
+{
+    [EditorRequired]
+    [Parameter]
+    public ModLoading ModLoading { get; set; }
+
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            ModLoading.FileCountChangeEvent += OnFileCountChange;
+            ModLoading.FileCountChangeEvent += OnFileCountChange;
+        }
+    }
+
+    private void OnFileCountChange(object? sender, FileCountChangeEventArgs eventArgs)
+    {
+        StateHasChanged();
+    }
+    private void On(object? sender, FileCountChangeEventArgs eventArgs)
+    {
+        StateHasChanged();
+    }
+}

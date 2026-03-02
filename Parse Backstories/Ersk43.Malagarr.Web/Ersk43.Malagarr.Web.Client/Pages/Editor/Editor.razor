@@ -1,16 +1,59 @@
 ﻿@page "/"
+@using Ersk43.Malagarr.Web.Client.Controllers.Editor.Controller
+@using Ersk43.Malagarr.Web.Client.Controllers.Editor.Mods
 @using Ersk43.Malagarr.Web.Client.Events.EventArgs
+@using Ersk43.Malagarr.Web.Client.Services
+
+
 
 <PageTitle>Def Editor</PageTitle>
 
-<OpenRimworldDirectory OnOpenedDirectoryCallback="OnOpenedDirectoryCallback"></OpenRimworldDirectory>
+@if (showDirectoryPicker)
+{
+    <OpenRimworldDirectory OnOpenedDirectoryCallback="OnOpenedDirectoryCallbackAsync"></OpenRimworldDirectory>
+}
+else
+{
+    <h1>Editor</h1>
 
+    <h2>Native Mods</h2>
+}
 
+@foreach (var kvp in controller.NativeMods)
+{
+    <ModLoadingComp ModLoading="kvp.Value"></ModLoadingComp>
+}
 
 @code {
 
-    public void OnOpenedDirectoryCallback(OpenedDirectoryEventArgs eventArgs)
+    private EditorController controller;
+    private bool showDirectoryPicker = true;
+
+
+    public Editor(IFileExplorerService fileExplorerService)
     {
+        controller = new(fileExplorerService);
+    }
+
+    public async Task OnOpenedDirectoryCallbackAsync(OpenedDirectoryEventArgs eventArgs)
+    {
+        showDirectoryPicker = false;
+
+        controller.LocateModEvent += OnLocateMod;
+
+        await controller.LoadNativeRimworldModsAsync(eventArgs.JSDirectoryHandle);
+
+
+
+        // listen to locate mod event
+
+        // then on each mod - listen to file count change event
+
         string s = "";
+    }
+
+    private void OnLocateMod(object? sender, LocateModEventArgs eventArgs)
+    {
+        this.StateHasChanged();
     }
 }

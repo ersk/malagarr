@@ -28,16 +28,35 @@ async function getContents(dirHandle) {
 
     console.log("## getContents ################################################");
 
-    //let entries = {};
-    let keysArr = [];
+    let entries = [];
+
     for await (const [key, value] of dirHandle.entries()) {
 
-        console.log("key = " + key);
-        //entries[key] = value;
-        keysArr.push(key);
+        console.log(`${key} => ${value.kind}`);
+        let entry = {
+            Name: key,
+            Kind: value.kind
+        };
+        entries.push(entry);
     }
-    return keysArr;
+    return entries;
 }
+//async function getContents(dirHandle) {
+
+//    console.log("## getContents ################################################");
+
+//    //let entries = {};
+//    let keysArr = [];
+
+//    for await (const [key, value] of dirHandle.entries()) {
+
+//        console.log("key = " + key);
+//        console.log("value = " + value, value);
+//        //entries[key] = value;
+//        keysArr.push(key);
+//    }
+//    return keysArr;
+//}
 async function getDirectoryHandle(dirHandle, childKey) {
 
     console.log("## getDirectoryHandle ################################################");
